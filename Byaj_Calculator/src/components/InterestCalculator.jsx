@@ -4,7 +4,7 @@ import "react-datepicker/dist/react-datepicker.css";
 
 const InterestCalculator = () => {
   const [principal, setPrincipal] = useState("");
-  const [rate, setRate] = useState("");
+  const [rate, setRate] = useState(""); // Monthly interest rate in %
   const [startDate, setStartDate] = useState(new Date());
   const [endDate, setEndDate] = useState(new Date());
   const [simpleInterest, setSimpleInterest] = useState(null);
@@ -15,30 +15,28 @@ const InterestCalculator = () => {
     const start = new Date(startDate);
     const end = new Date(endDate);
 
-    let years = end.getFullYear() - start.getFullYear();
-    let months = end.getMonth() - start.getMonth();
-    let days = end.getDate() - start.getDate();
+    const timeInMilliseconds = end - start; // Time in milliseconds
+    const timeInDays = timeInMilliseconds / (1000 * 3600 * 24); // Convert milliseconds to days
+    const timeInMonths = timeInDays / 30.4375; // Convert days to months (approximate average month length)
+    const timeInYears = timeInMonths / 12; // Convert months to years
 
-    if (days < 0) {
-      months -= 1;
-      const prevMonth = new Date(end.getFullYear(), end.getMonth(), 0).getDate();
-      days += prevMonth;
-    }
-
-    if (months < 0) {
-      years -= 1;
-      months += 12;
-    }
+    const years = Math.floor(timeInYears);
+    const months = Math.floor(timeInMonths - years * 12);
+    const days = Math.floor(timeInDays - years * 365.25 - months * 30.4375);
 
     setTimePeriod({ years, months, days });
 
-    return years + months / 12 + days / 365.25;
+    return timeInMonths; // Return time in months for CI calculation
   };
 
   const calculateInterests = () => {
-    const timeInYears = calculateTimePeriod();
-    const SI = (principal * rate * timeInYears) / 100;
-    const CI = principal * Math.pow(1 + rate / 100, timeInYears) - principal;
+    const timeInMonths = calculateTimePeriod(); // Get the time in months
+
+    // Calculate Simple Interest (SI) for monthly rate
+    const SI = (principal * rate * timeInMonths) / 100;
+
+    // Calculate Compound Interest (CI) for monthly rate
+    const CI = principal * Math.pow(1 + rate / 100, timeInMonths) - principal;
 
     setSimpleInterest(SI);
     setCompoundInterest(CI);
@@ -65,17 +63,17 @@ const InterestCalculator = () => {
           />
         </div>
 
-        {/* Rate of Interest Input */}
+        {/* Rate of Interest Input (monthly rate) */}
         <div className="mb-4">
           <label className="block text-sm font-semibold text-gray-600 mb-1">
-            Rate of Interest (R)
+            Monthly Rate of Interest (R)
           </label>
           <input
             type="number"
             className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
             value={rate}
             onChange={(e) => setRate(e.target.value)}
-            placeholder="Enter rate of interest"
+            placeholder="Enter monthly rate of interest"
           />
         </div>
 
